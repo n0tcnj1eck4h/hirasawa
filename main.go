@@ -52,7 +52,7 @@ func handleBancho(w http.ResponseWriter, r *http.Request) {
 					log.Fatal(err)
 				}
 
-				log.Printf("Awesome packet recieved: %#v\n", p)
+				log.Printf("Awesome packet recieved: %v, Length: %v\n", p.ReadType, p.Length)
 			}
 
 		} else {
