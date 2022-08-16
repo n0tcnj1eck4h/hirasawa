@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"hirasawa/bancho"
 	"io"
@@ -32,14 +31,6 @@ type LoggedPlayer struct {
 	osuToken string
 }
 
-type Handler interface {
-	Handle(player *LoggedPlayer, w *io.Writer)
-}
-
-func ReadBanchoPacket(r *io.Reader) (packet Handler, err error) {
-	return nil, errors.New("Oops")
-}
-
 func handleBancho(w http.ResponseWriter, r *http.Request) {
 	if r.UserAgent() != "osu!" && r.Method == "GET" {
 		fmt.Fprint(w, "Fuck you")
@@ -50,6 +41,20 @@ func handleBancho(w http.ResponseWriter, r *http.Request) {
 		if osu_token := r.Header.Get("Osu-Token"); osu_token != "" {
 			// Handle bancho packet
 			log.Println("Bancho request sent by", osu_token)
+
+			for {
+				p, err := bancho.ReadBanchoPacket(r.Body)
+				if err == io.EOF {
+					log.Println("End of payload")
+					break
+				} else if err != nil {
+					log.Println("Error parsing awesome packet")
+					log.Fatal(err)
+				}
+
+				log.Printf("Awesome packet recieved: %#v\n", p)
+			}
+
 		} else {
 			// It's a login
 			log.Println("Bancho login request from", r.UserAgent())
@@ -61,7 +66,7 @@ func handleBancho(w http.ResponseWriter, r *http.Request) {
 
 			body := string(bodyBytes)
 			remainder := strings.Fields(body)
-            
+
 			if len(remainder) != 3 {
 				log.Println("Body parsing error")
 				return
