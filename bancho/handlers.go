@@ -2,6 +2,9 @@ package bancho
 
 import (
 	"bytes"
+	"hirasawa/bancho/common"
+	"hirasawa/bancho/incoming"
+	"hirasawa/bancho/outgoing"
 	"io"
 	"io/ioutil"
 	"log"
@@ -9,25 +12,6 @@ import (
 	"strconv"
 	"strings"
 )
-
-type LoginData struct {
-	Username          string
-	PasswordHash      string
-	OsuVersion        string
-	UtcOffset         int
-	DisplayCity       bool
-	PrivateMessages   bool
-	OsuPathHash       string
-	Adapters          string
-	AdaptersHash      string
-	UninstallHash     string
-	DiskSignatureHash string
-}
-
-type LoggedPlayer struct {
-	LoginData
-	OsuToken string
-}
 
 func HandleBanchoLogin(w http.ResponseWriter, r *http.Request) {
 	bodyBytes, err := ioutil.ReadAll(r.Body)
@@ -43,7 +27,7 @@ func HandleBanchoLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginData := &LoginData{}
+	loginData := &common.LoginData{}
 	loginData.Username = remainder[0]
 	loginData.PasswordHash = remainder[1]
 
@@ -78,21 +62,24 @@ func HandleBanchoLogin(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("cho-token", "placeholder")
 
 	payload := &bytes.Buffer{}
-	payload.Write(ProtocolVersion(19))
-	payload.Write(UserID(123123))
+	payload.Write(outgoing.ProtocolVersion(19))
+	payload.Write(outgoing.UserID(123123))
 	payload.WriteTo(w)
 }
 
 func HandleBanchoRequest(w http.ResponseWriter, r *http.Request) {
+	dummy := common.Context{}
+
 	for {
-		if p, err := ReadBanchoPacket(r.Body); err == nil {
-			log.Printf("New bancho request: %v, Length: %v\n", p.ReadType, p.Length)
+		if p, err := incoming.ReadIncomingBanchoPacket(r.Body); err == nil {
+			p.Handle(&dummy)
 		} else if err == io.EOF {
 			break
 		} else if err != nil {
 			log.Println("Error parsing bacho request:", err)
-			return
+			return // TODO: this acts weird
 		}
 	}
 
+	dummy.PacketQueue.WriteTo(w)
 }
