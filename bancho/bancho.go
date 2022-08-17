@@ -19,18 +19,12 @@ type PacketHeader struct {
 func ReadBanchoPacket(r io.Reader) (PacketHeader, error) {
 	var header PacketHeader
 
-	log.Println("Parsing packet header...")
-
 	err := binary.Read(r, binary.LittleEndian, &header)
 	if err != nil {
 		return header, err
 	}
 
-	log.Printf("Read packet header: %#v\n", header)
-	log.Println("Skipping ", header.Length, " bytes...")
-
-	io.CopyN(ioutil.Discard, r, int64(header.Length))
-
+	_, err = io.CopyN(ioutil.Discard, r, int64(header.Length))
 	if err != nil {
 		return header, err
 	}
@@ -39,7 +33,7 @@ func ReadBanchoPacket(r io.Reader) (PacketHeader, error) {
 }
 
 func write(p PacketID, args ...interface{}) []byte {
-	buffer := bytes.NewBuffer(make([]byte, 0))
+	buffer := &bytes.Buffer{}
 
 	err := binary.Write(buffer, binary.LittleEndian, p) // 2 Bytes
 	if err != nil {
@@ -51,7 +45,7 @@ func write(p PacketID, args ...interface{}) []byte {
 		log.Fatal(err)
 	}
 
-	payload := bytes.NewBuffer(make([]byte, 0))
+	payload := &bytes.Buffer{}
 	for _, v := range args {
 		err = binary.Write(payload, binary.LittleEndian, v)
 		if err != nil {

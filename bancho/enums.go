@@ -1,5 +1,7 @@
 package bancho
 
+import "fmt"
+
 const (
 	SERVER_USER_ID                     PacketID = 5
 	SERVER_SEND_MESSAGE                         = 7
@@ -167,7 +169,7 @@ func (p PacketID) String() string {
 	case SERVER_MATCH_TRANSFER_HOST:
 		return "SERVER_MATCH_TRANSFER_HOST"
 	case SERVER_MATCH_ALL_PLAYERS_LOADED:
-		return "SERVER_MATCH_ALL_PLAYERS_LOADED "
+		return "SERVER_MATCH_ALL_PLAYERS_LOADED"
 	case SERVER_MATCH_PLAYER_FAILED:
 		return "SERVER_MATCH_PLAYER_FAILED"
 	case SERVER_MATCH_COMPLETE:
@@ -177,7 +179,7 @@ func (p PacketID) String() string {
 	case SERVER_UNAUTHORIZED:
 		return "SERVER_UNAUTHORIZED"
 	case SERVER_CHANNEL_JOIN_SUCCESS:
-		return "SERVER_CHANNEL_JOIN_SUCCESS "
+		return "SERVER_CHANNEL_JOIN_SUCCESS"
 	case SERVER_CHANNEL_INFO:
 		return "SERVER_CHANNEL_INFO"
 	case SERVER_CHANNEL_KICK:
@@ -191,7 +193,7 @@ func (p PacketID) String() string {
 	case SERVER_FRIENDS_LIST:
 		return "SERVER_FRIENDS_LIST"
 	case SERVER_PROTOCOL_VERSION:
-		return "SERVER_PROTOCOL_VERSION "
+		return "SERVER_PROTOCOL_VERSION"
 	case SERVER_MAIN_MENU_ICON:
 		return "SERVER_MAIN_MENU_ICON"
 	case SERVER_MONITOR:
@@ -332,6 +334,6 @@ func (p PacketID) String() string {
 	case CLIENT_TOURNAMENT_LEAVE_MATCH_CHANNEL:
 		return "CLIENT_TOURNAMENT_LEAVE_MATCH_CHANNEL"
 	default:
-		return "UNKNOWN"
+		return fmt.Sprintf("UNKNOWN (%d)", uint16(p))
 	}
 }
