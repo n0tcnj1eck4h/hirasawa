@@ -1,6 +1,9 @@
 package common
 
-import "bytes"
+import (
+	"bytes"
+	"sync"
+)
 
 type LoginData struct {
 	Username          string
@@ -18,8 +21,9 @@ type LoginData struct {
 
 type LoggedPlayer struct {
 	LoginData
-	OsuToken    string
-	PacketQueue bytes.Buffer
+	OsuToken        string
+	PacketQueue     bytes.Buffer
+	PacketQueueLock sync.Mutex
 }
 
 type Context struct {

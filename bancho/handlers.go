@@ -63,23 +63,28 @@ func HandleBanchoLogin(w http.ResponseWriter, r *http.Request) {
 
 	payload := &bytes.Buffer{}
 	payload.Write(outgoing.ProtocolVersion(19))
-	payload.Write(outgoing.UserID(123123))
+	payload.Write(outgoing.UserID(69))
 	payload.WriteTo(w)
 }
 
 func HandleBanchoRequest(w http.ResponseWriter, r *http.Request) {
-	dummy := common.Context{}
+	dummy := &common.Context{}
+	dummy.PacketQueueLock.Lock()
+	defer dummy.PacketQueueLock.Unlock()
 
 	for {
 		if p, err := incoming.ReadIncomingBanchoPacket(r.Body); err == nil {
-			p.Handle(&dummy)
+			log.Println("Handling packet", p.Type(), "with size", p.Len())
+			p.Handle(dummy)
 		} else if err == io.EOF {
 			break
 		} else if err != nil {
-			log.Println("Error parsing bacho request:", err)
-			return // TODO: this acts weird
+			log.Println("Error parsing bancho request:", err)
 		}
 	}
 
-	dummy.PacketQueue.WriteTo(w)
+	w.WriteHeader(http.StatusOK)
+	b := dummy.PacketQueue.Bytes()
+	log.Println("Replying with bytes", b)
+	w.Write(b)
 }

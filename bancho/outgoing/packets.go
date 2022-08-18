@@ -17,8 +17,7 @@ func Pong() []byte {
 }
 
 // Packet 11
-// GUGE: strings might be broken
-func UserStats(userID int32, action uint8, infoText string, mapMD5 string, mods int32, mode, uint8, mapID int32,
+func UserStats(userID int32, action uint8, infoText string, mapMD5 string, mods int32, mode uint8, mapID int32,
 	rankedScore int64, accuracy float32, plays int32, totalScore int64, globalRank int32, pp int16) []byte {
 	return write(USER_STATS, userID, action, infoText, mapMD5, mods, mode, mapID, rankedScore, accuracy, plays, totalScore, globalRank, pp)
 }
@@ -110,13 +109,11 @@ func MatchSkip() []byte {
 }
 
 // Packet 64
-// GUGE: strings might be broken
 func ChannelJoin(name string) []byte {
 	return write(CHANNEL_JOIN_SUCCESS, name)
 }
 
 // Packet 66
-// GUGE: strings might be broken
 func ChannelKick(name string) []byte {
 	return write(CHANNEL_KICK, name)
 }
@@ -137,8 +134,6 @@ func MatchPlayerSkipped(userID int32) []byte {
 }
 
 // Packet 83
-// GUGE: strings might be broken
-// UTCOffset might be broken
 // whole thing might be broken
 func UserPresence(userID int32, name string, UTCOffset uint8, countryCode uint8, banchoPrivileges uint8, longitude float32,
 	latitude float32, globalRank int32) []byte {
@@ -223,9 +218,14 @@ func write(p OutgoingPacketID, args ...interface{}) []byte {
 
 	payload := &bytes.Buffer{}
 	for _, v := range args {
-		err = binary.Write(payload, binary.LittleEndian, v)
-		if err != nil {
-			log.Fatal(err)
+		switch t := v.(type) {
+		case string:
+			payload.Write(writeString(t))
+		default:
+			err = binary.Write(payload, binary.LittleEndian, v)
+			if err != nil {
+				log.Fatal(err)
+			}
 		}
 	}
 
@@ -236,4 +236,35 @@ func write(p OutgoingPacketID, args ...interface{}) []byte {
 
 	payload.WriteTo(buffer)
 	return buffer.Bytes()
+}
+
+func writeString(str string) []byte {
+	if len(str) != 0 {
+		b := bytes.Buffer{}
+		b.Write([]byte{0x0b})
+		str_bytes := []byte(str)
+		b.Write(writeUleb128(len(str_bytes)))
+		b.Write(str_bytes)
+		return b.Bytes()
+	} else {
+		return []byte{0}
+	}
+}
+
+func writeUleb128(num int) []byte {
+	if num == 0 {
+		return []byte{0}
+	}
+
+	ret := &bytes.Buffer{}
+
+	for num != 0 {
+		binary.Write(ret, binary.LittleEndian, num&0x7F)
+		num >>= 7
+		if num != 0 {
+			ret.Bytes()[ret.Len()-1] |= 0x80
+		}
+	}
+
+	return ret.Bytes()
 }

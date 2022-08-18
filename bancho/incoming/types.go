@@ -5,11 +5,19 @@ import (
 	"errors"
 	"fmt"
 	"hirasawa/bancho/common"
-	"hirasawa/bancho/outgoing"
 	"io"
 	"io/ioutil"
-	"log"
 )
+
+type BanchoPacket interface {
+	Type() PacketID
+	Len() uint32
+}
+
+type BanchoHandlable interface {
+	Handle(*common.Context)
+	BanchoPacket
+}
 
 type PacketID uint16
 
@@ -19,34 +27,33 @@ type PacketHeader struct {
 	Length   uint32
 }
 
-type BanchoHandlable interface {
-	Handle(*common.Context)
+func (h PacketHeader) Type() PacketID {
+	return h.ReadType
 }
 
-// Packet 4
-type Ping struct {
-	PacketHeader
-}
-
-func (Ping) Handle(ctx *common.Context) {
-	ctx.PacketQueue.Write(outgoing.Pong())
+func (h PacketHeader) Len() uint32 {
+	return h.Length
 }
 
 func ReadIncomingBanchoPacket(r io.Reader) (BanchoHandlable, error) {
 	var header PacketHeader
 
 	err := binary.Read(r, binary.LittleEndian, &header)
-	if err != nil && err != io.EOF {
+	if err != nil {
 		return nil, err
 	}
-
-	log.Printf("Parsing packet %v with length %v...\n", header.ReadType, header.Length)
 
 	switch header.ReadType {
 	case PING:
 		return Ping{header}, err
+	case REQUEST_STATUS_UPDATE:
+		return RequestStatusUpdate{header}, err
 	default:
-		_, err = io.CopyN(ioutil.Discard, r, int64(header.Length))
+		_, err := io.CopyN(ioutil.Discard, r, int64(header.Length))
+		if err != nil {
+			return nil, err
+		}
+
 		return nil, errors.New(fmt.Sprintf("Unsupported packet: %v", header.ReadType))
 	}
 }
