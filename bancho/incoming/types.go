@@ -1,13 +1,11 @@
 package incoming
 
 import (
-	"encoding/binary"
-	"errors"
 	"fmt"
 	"hirasawa/bancho/common"
-	"io"
-	"io/ioutil"
 )
+
+type PacketID uint16
 
 type BanchoPacket interface {
 	Type() PacketID
@@ -18,8 +16,6 @@ type BanchoHandlable interface {
 	Handle(*common.Context)
 	BanchoPacket
 }
-
-type PacketID uint16
 
 type PacketHeader struct {
 	ReadType PacketID
@@ -33,29 +29,6 @@ func (h PacketHeader) Type() PacketID {
 
 func (h PacketHeader) Len() uint32 {
 	return h.Length
-}
-
-func ReadIncomingBanchoPacket(r io.Reader) (BanchoHandlable, error) {
-	var header PacketHeader
-
-	err := binary.Read(r, binary.LittleEndian, &header)
-	if err != nil {
-		return nil, err
-	}
-
-	switch header.ReadType {
-	case PING:
-		return Ping{header}, err
-	case REQUEST_STATUS_UPDATE:
-		return RequestStatusUpdate{header}, err
-	default:
-		_, err := io.CopyN(ioutil.Discard, r, int64(header.Length))
-		if err != nil {
-			return nil, err
-		}
-
-		return nil, errors.New(fmt.Sprintf("Unsupported packet: %v", header.ReadType))
-	}
 }
 
 const (

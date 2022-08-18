@@ -20,12 +20,13 @@ type LoginData struct {
 }
 
 type LoggedPlayer struct {
-	LoginData
+	LoginData *LoginData
+	ID		int32
 	OsuToken        string
 	PacketQueue     bytes.Buffer
 	PacketQueueLock sync.Mutex
 }
 
 type Context struct {
-	LoggedPlayer
+	Player *LoggedPlayer
 }
