@@ -42,7 +42,7 @@ func init() {
 	MainHandler.Funcs[SEND_PUBLIC_MESSAGE] = unimplemented
 	MainHandler.Funcs[LOGOUT] = unimplemented
 	MainHandler.Funcs[REQUEST_STATUS_UPDATE] = func(p *PacketHeader, ctx *common.Context, r io.Reader) error {
-		ctx.Player.PacketQueue.Write(outgoing.UserStats(ctx.Player.ID, 0, "", "", 0, 0, 0, 727, 0.69, 123, 234, 345, 72))
+		ctx.Player.PacketQueue.Write(outgoing.UserStats(ctx.Player.ID, 0, "poop", "poop", 0, 0, 0, 727, 0.69, 123, 234, 345, 72))
 		return nil
 	}
 	MainHandler.Funcs[PING] = doNothing
@@ -81,11 +81,23 @@ func init() {
 	MainHandler.Funcs[RECEIVE_UPDATES] = unimplemented
 	MainHandler.Funcs[SET_AWAY_MESSAGE] = unimplemented
 	MainHandler.Funcs[IRC_ONLY] = unimplemented
-	MainHandler.Funcs[USER_STATS_REQUEST] = unimplemented
+	MainHandler.Funcs[USER_STATS_REQUEST] = func(p *PacketHeader, ctx *common.Context, r io.Reader) error {
+		users := readInt32List16(r)
+		for u := range users {
+			ctx.Player.PacketQueue.Write(outgoing.UserStats(int32(u), 0, "poop", "poop", 0, 0, 0, 727, 0.69, 123, 234, 345, 72))
+		}
+		return nil
+	}
 	MainHandler.Funcs[MATCH_INVITE] = unimplemented
 	MainHandler.Funcs[MATCH_CHANGE_PASSWORD] = unimplemented
 	MainHandler.Funcs[TOURNAMENT_MATCH_INFO_REQUEST] = unimplemented
-	MainHandler.Funcs[USER_PRESENCE_REQUEST] = unimplemented
+	MainHandler.Funcs[USER_PRESENCE_REQUEST] = func(p *PacketHeader, ctx *common.Context, r io.Reader) error {
+		users := readInt32List16(r)
+		for u := range users {
+			ctx.Player.PacketQueue.Write(outgoing.UserPresence(int32(u), "Retard", 2, 69, 2, 0, 0, 0, 1))
+		}
+		return nil
+	}
 	MainHandler.Funcs[USER_PRESENCE_REQUEST_ALL] = unimplemented
 	MainHandler.Funcs[TOGGLE_BLOCK_NON_FRIEND_DMS] = unimplemented
 	MainHandler.Funcs[TOURNAMENT_JOIN_MATCH_CHANNEL] = unimplemented

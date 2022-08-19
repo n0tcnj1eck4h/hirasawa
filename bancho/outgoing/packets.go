@@ -134,10 +134,9 @@ func MatchPlayerSkipped(userID int32) []byte {
 }
 
 // Packet 83
-// whole thing might be broken
-func UserPresence(userID int32, name string, UTCOffset uint8, countryCode uint8, banchoPrivileges uint8, longitude float32,
+func UserPresence(userID int32, name string, UTCOffset uint8, countryCode uint8, banchoPrivileges uint8, mode uint8, longitude float32,
 	latitude float32, globalRank int32) []byte {
-	return write(USER_PRESENCE, userID, name, UTCOffset, countryCode, banchoPrivileges, longitude, latitude, globalRank)
+	return write(USER_PRESENCE, userID, name, UTCOffset, countryCode, banchoPrivileges | (mode << 5), longitude, latitude, globalRank)
 }
 
 // Packet 86
