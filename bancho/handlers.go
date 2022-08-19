@@ -53,10 +53,7 @@ func HandleBanchoRequest(w http.ResponseWriter, r *http.Request) {
 	defer player.PacketQueueLock.Unlock()
 
 	for {
-		if p, err := incoming.ReadIncomingBanchoPacket(r.Body); err == nil {
-			log.Println("Handling packet", p.Type(), "with size", p.Len())
-			p.Handle(context)
-		} else if err == io.EOF {
+		if err := incoming.MainHandler.Handle(context, r.Body); err == io.EOF {
 			break
 		} else if err != nil {
 			log.Println("Error parsing bancho request:", err)
@@ -65,6 +62,7 @@ func HandleBanchoRequest(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	b := player.PacketQueue.Bytes()
+	player.PacketQueue.Reset()
 	log.Println("Replying with bytes", b)
 	w.Write(b)
 }
