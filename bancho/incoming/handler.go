@@ -5,6 +5,7 @@ import (
 	"errors"
 	"hirasawa/bancho/common"
 	"hirasawa/bancho/outgoing"
+	"hirasawa/bancho/userstore"
 	"io"
 	"io/ioutil"
 	"log"
@@ -42,9 +43,11 @@ func init() {
 	MainHandler.Funcs[SEND_PUBLIC_MESSAGE] = unimplemented
 	MainHandler.Funcs[LOGOUT] = unimplemented
 	MainHandler.Funcs[REQUEST_STATUS_UPDATE] = func(p *PacketHeader, ctx *common.Context, r io.Reader) error {
-		ctx.Player.PacketQueue.Write(outgoing.UserStats(ctx.Player.ID, 0, "poop", "poop", 0, 0, 0, 727, 0.69, 123, 234, 345, 72))
+		plr := ctx.Player
+		plr.Session.PacketQueue.Write(outgoing.UserStatsPlayer(plr))
 		return nil
 	}
+
 	MainHandler.Funcs[PING] = doNothing
 	MainHandler.Funcs[START_SPECTATING] = unimplemented
 	MainHandler.Funcs[STOP_SPECTATING] = unimplemented
@@ -84,20 +87,28 @@ func init() {
 	MainHandler.Funcs[USER_STATS_REQUEST] = func(p *PacketHeader, ctx *common.Context, r io.Reader) error {
 		users := readInt32List16(r)
 		for u := range users {
-			ctx.Player.PacketQueue.Write(outgoing.UserStats(int32(u), 0, "poop", "poop", 0, 0, 0, 727, 0.69, 123, 234, 345, 72))
+			player, ok := userstore.Store.FromID(int32(u))
+			if ok && player.Online() {
+				ctx.Player.Session.PacketQueue.Write(outgoing.UserStatsPlayer(player))
+			}
 		}
 		return nil
 	}
+
 	MainHandler.Funcs[MATCH_INVITE] = unimplemented
 	MainHandler.Funcs[MATCH_CHANGE_PASSWORD] = unimplemented
 	MainHandler.Funcs[TOURNAMENT_MATCH_INFO_REQUEST] = unimplemented
 	MainHandler.Funcs[USER_PRESENCE_REQUEST] = func(p *PacketHeader, ctx *common.Context, r io.Reader) error {
 		users := readInt32List16(r)
 		for u := range users {
-			ctx.Player.PacketQueue.Write(outgoing.UserPresence(int32(u), "Retard", 2, 69, 2, 0, 0, 0, 1))
+			player, ok := userstore.Store.FromID(int32(u))
+			if ok && player.Online() {
+				ctx.Player.Session.PacketQueue.Write(outgoing.UserPresencePlayer(player))
+			}
 		}
 		return nil
 	}
+
 	MainHandler.Funcs[USER_PRESENCE_REQUEST_ALL] = unimplemented
 	MainHandler.Funcs[TOGGLE_BLOCK_NON_FRIEND_DMS] = unimplemented
 	MainHandler.Funcs[TOURNAMENT_JOIN_MATCH_CHANNEL] = unimplemented
@@ -109,9 +120,7 @@ func doNothing(p *PacketHeader, ctx *common.Context, r io.Reader) error {
 	return err
 }
 
-func unimplemented (p *PacketHeader, ctx *common.Context, r io.Reader) error {
+func unimplemented(p *PacketHeader, ctx *common.Context, r io.Reader) error {
 	log.Println("Packet handling for", p.ReadType, "is not yet implemented")
 	return doNothing(p, ctx, r)
 }
-
-

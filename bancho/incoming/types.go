@@ -2,33 +2,14 @@ package incoming
 
 import (
 	"fmt"
-	"hirasawa/bancho/common"
 )
 
 type PacketID uint16
-
-type BanchoPacket interface {
-	Type() PacketID
-	Len() uint32
-}
-
-type BanchoHandlable interface {
-	Handle(*common.Context)
-	BanchoPacket
-}
 
 type PacketHeader struct {
 	ReadType PacketID
 	_        byte // Peppy padding
 	Length   uint32
-}
-
-func (h PacketHeader) Type() PacketID {
-	return h.ReadType
-}
-
-func (h PacketHeader) Len() uint32 {
-	return h.Length
 }
 
 const (

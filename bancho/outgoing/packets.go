@@ -3,6 +3,7 @@ package outgoing
 import (
 	"bytes"
 	"encoding/binary"
+	"hirasawa/bancho/userstore"
 	"log"
 )
 
@@ -20,6 +21,10 @@ func Pong() []byte {
 func UserStats(userID int32, action uint8, infoText string, mapMD5 string, mods int32, mode uint8, mapID int32,
 	rankedScore int64, accuracy float32, plays int32, totalScore int64, globalRank int32, pp int16) []byte {
 	return write(USER_STATS, userID, action, infoText, mapMD5, mods, mode, mapID, rankedScore, accuracy, plays, totalScore, globalRank, pp)
+}
+
+func UserStatsPlayer(p *userstore.Player) []byte {
+	return UserStats(p.ID, 0, "", "", 0, 0, 0, p.Stats.RankedScore, p.Stats.Accuracy, p.Stats.PlayCount, p.Stats.TotalScore, 1, 100)
 }
 
 // Packet 12
@@ -136,7 +141,11 @@ func MatchPlayerSkipped(userID int32) []byte {
 // Packet 83
 func UserPresence(userID int32, name string, UTCOffset uint8, countryCode uint8, banchoPrivileges uint8, mode uint8, longitude float32,
 	latitude float32, globalRank int32) []byte {
-	return write(USER_PRESENCE, userID, name, UTCOffset, countryCode, banchoPrivileges | (mode << 5), longitude, latitude, globalRank)
+	return write(USER_PRESENCE, userID, name, UTCOffset, countryCode, banchoPrivileges|(mode<<5), longitude, latitude, globalRank)
+}
+
+func UserPresencePlayer(p *userstore.Player) []byte {
+	return UserPresence(p.ID, p.DisplayName, uint8(p.Session.LoginData.UtcOffset+24), 0, 0, 0, 0, 0, 1)
 }
 
 // Packet 86

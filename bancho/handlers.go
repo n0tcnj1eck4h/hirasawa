@@ -6,6 +6,7 @@ import (
 	"hirasawa/bancho/common"
 	"hirasawa/bancho/incoming"
 	"hirasawa/bancho/outgoing"
+	"hirasawa/bancho/userstore"
 	"io"
 	"io/ioutil"
 	"log"
@@ -22,24 +23,35 @@ func HandleBanchoLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	player, err := common.PerformLogin(loginData)
+	player, err := userstore.Store.Login(loginData)
+	if err == userstore.NoSuchUser {
+		log.Println("User doesn't exist. Registering...")
+		player, err = userstore.Store.Register(loginData)
+		if err != nil {
+			log.Panicln("Failed to register player:", err)
+			return
+		}
+
+		player, err = userstore.Store.Login(loginData)
+	}
+
 	if err != nil {
 		log.Println("Failed to perform login:", err)
 		w.WriteHeader(http.StatusTeapot)
 		return
 	}
 
-	w.Header().Add("cho-token", player.OsuToken)
+	w.Header().Add("cho-token", player.Session.OsuToken)
 
 	payload := &bytes.Buffer{}
 	payload.Write(outgoing.ProtocolVersion(19))
-	payload.Write(outgoing.UserID(69))
+	payload.Write(outgoing.UserID(player.ID))
 	payload.WriteTo(w)
 }
 
 func HandleBanchoRequest(w http.ResponseWriter, r *http.Request) {
 	token := r.Header.Get("Osu-Token")
-	player, ok := common.GetPlayer(token)
+	player, ok := userstore.Store.FromToken(token)
 
 	if !ok {
 		log.Println("Failed to get player from token", token)
@@ -49,8 +61,8 @@ func HandleBanchoRequest(w http.ResponseWriter, r *http.Request) {
 
 	context := &common.Context{Player: player}
 
-	player.PacketQueueLock.Lock()
-	defer player.PacketQueueLock.Unlock()
+	player.Session.PacketQueueLock.Lock()
+	defer player.Session.PacketQueueLock.Unlock()
 
 	for {
 		if err := incoming.MainHandler.Handle(context, r.Body); err == io.EOF {
@@ -61,13 +73,13 @@ func HandleBanchoRequest(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	b := player.PacketQueue.Bytes()
-	player.PacketQueue.Reset()
+	b := player.Session.PacketQueue.Bytes()
+	player.Session.PacketQueue.Reset()
 	log.Println("Replying with bytes", b)
 	w.Write(b)
 }
 
-func readLoginData(r io.Reader) (*common.LoginData, error) {
+func readLoginData(r io.Reader) (*userstore.LoginData, error) {
 	bodyBytes, err := ioutil.ReadAll(r)
 	if err != nil {
 		return nil, err
@@ -79,7 +91,7 @@ func readLoginData(r io.Reader) (*common.LoginData, error) {
 		return nil, errors.New("Login request body is misformatted")
 	}
 
-	loginData := &common.LoginData{}
+	loginData := &userstore.LoginData{}
 	loginData.Username = remainder[0]
 	loginData.PasswordHash = remainder[1]
 
