@@ -75,7 +75,9 @@ func HandleBanchoRequest(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	b := player.Session.PacketQueue.Bytes()
 	player.Session.PacketQueue.Reset()
-	log.Println("Replying with bytes", b)
+	if len(b) > 0 {
+		log.Println("Replying with bytes", b)
+	}
 	w.Write(b)
 }
 

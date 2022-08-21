@@ -68,6 +68,7 @@ func (store *PlayerStore) Login(login *LoginData) (*Player, error) {
 
 	player.Session = &Session{
 		OsuToken:  fmt.Sprintf("placeholdertoken%d", player.ID),
+		Status: &PlayerStatus{},
 		LoginData: login,
 	}
 

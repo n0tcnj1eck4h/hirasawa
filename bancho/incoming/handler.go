@@ -39,9 +39,58 @@ var MainHandler HandlerSet
 func init() {
 	MainHandler = HandlerSet{}
 	MainHandler.Funcs = map[PacketID]HandlerFunc{}
-	MainHandler.Funcs[CHANGE_ACTION] = unimplemented
+	MainHandler.Funcs[CHANGE_ACTION] = func(p *PacketHeader, ctx *common.Context, r io.Reader) error {
+		var action uint8
+		err := binary.Read(r, binary.LittleEndian, &action)
+		if err != nil {
+			return err
+		}
+
+		infoText, err := readString(r)
+		if err != nil {
+			return err
+		}
+
+		mapHash, err := readString(r)
+		if err != nil {
+			return err
+		}
+
+		var mods uint32
+		err = binary.Read(r, binary.LittleEndian, &mods)
+		if err != nil {
+			return err
+		}
+
+		var mode uint8
+		err = binary.Read(r, binary.LittleEndian, &mode)
+		if err != nil {
+			return err
+		}
+
+		var mapID int32
+		err = binary.Read(r, binary.LittleEndian, &mapID)
+		if err != nil {
+			return err
+		}
+
+		ctx.Player.Session.Status.Action = action
+		ctx.Player.Session.Status.InfoText = infoText
+		ctx.Player.Session.Status.MapHash = mapHash
+		ctx.Player.Session.Status.Mods = mods
+		ctx.Player.Session.Status.Mode = mode
+		ctx.Player.Session.Status.MapID = mapID
+
+		return nil	
+	}
+
 	MainHandler.Funcs[SEND_PUBLIC_MESSAGE] = unimplemented
-	MainHandler.Funcs[LOGOUT] = unimplemented
+	MainHandler.Funcs[LOGOUT] = func(p *PacketHeader, ctx *common.Context, r io.Reader) error {
+		userstore.Store.Remove(ctx.Player)
+		doNothing(p, ctx, r)
+		return nil
+	}
+
 	MainHandler.Funcs[REQUEST_STATUS_UPDATE] = func(p *PacketHeader, ctx *common.Context, r io.Reader) error {
 		plr := ctx.Player
 		plr.Session.PacketQueue.Write(outgoing.UserStatsPlayer(plr))
@@ -85,13 +134,18 @@ func init() {
 	MainHandler.Funcs[SET_AWAY_MESSAGE] = unimplemented
 	MainHandler.Funcs[IRC_ONLY] = unimplemented
 	MainHandler.Funcs[USER_STATS_REQUEST] = func(p *PacketHeader, ctx *common.Context, r io.Reader) error {
-		users := readInt32List16(r)
+		users, err := readInt32List16(r)
+		if err != nil {
+			return err
+		}
+
 		for u := range users {
 			player, ok := userstore.Store.FromID(int32(u))
 			if ok && player.Online() {
 				ctx.Player.Session.PacketQueue.Write(outgoing.UserStatsPlayer(player))
 			}
 		}
+
 		return nil
 	}
 
@@ -99,13 +153,18 @@ func init() {
 	MainHandler.Funcs[MATCH_CHANGE_PASSWORD] = unimplemented
 	MainHandler.Funcs[TOURNAMENT_MATCH_INFO_REQUEST] = unimplemented
 	MainHandler.Funcs[USER_PRESENCE_REQUEST] = func(p *PacketHeader, ctx *common.Context, r io.Reader) error {
-		users := readInt32List16(r)
+		users, err := readInt32List16(r)
+		if err != nil {
+			return err
+		}
+
 		for u := range users {
 			player, ok := userstore.Store.FromID(int32(u))
 			if ok && player.Online() {
 				ctx.Player.Session.PacketQueue.Write(outgoing.UserPresencePlayer(player))
 			}
 		}
+
 		return nil
 	}
 

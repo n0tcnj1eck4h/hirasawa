@@ -33,6 +33,15 @@ type PlayerStats struct {
 	// count ranks...
 }
 
+type PlayerStatus struct {
+	Action		uint8
+	InfoText	string
+	MapHash 	string
+	Mods		uint32
+	Mode		uint8
+	MapID		int32
+}
+
 type Player struct {
 	ID           int32
 	UsernameSafe string
@@ -46,6 +55,7 @@ type Player struct {
 type Session struct {
 	OsuToken        string
 	LoginData       *LoginData
+	Status		*PlayerStatus
 	PacketQueue     bytes.Buffer
 	PacketQueueLock sync.Mutex
 }

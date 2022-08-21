@@ -24,7 +24,7 @@ func UserStats(userID int32, action uint8, infoText string, mapMD5 string, mods 
 }
 
 func UserStatsPlayer(p *userstore.Player) []byte {
-	return UserStats(p.ID, 0, "", "", 0, 0, 0, p.Stats.RankedScore, p.Stats.Accuracy, p.Stats.PlayCount, p.Stats.TotalScore, 1, 100)
+	return UserStats(p.ID, p.Session.Status.Action, p.Session.Status.InfoText, p.Session.Status.MapHash, int32(p.Session.Status.Mods), p.Session.Status.Mode, p.Session.Status.MapID, p.Stats.RankedScore, p.Stats.Accuracy, p.Stats.PlayCount, p.Stats.TotalScore, 1, 100)
 }
 
 // Packet 12
@@ -145,7 +145,7 @@ func UserPresence(userID int32, name string, UTCOffset uint8, countryCode uint8,
 }
 
 func UserPresencePlayer(p *userstore.Player) []byte {
-	return UserPresence(p.ID, p.DisplayName, uint8(p.Session.LoginData.UtcOffset+24), 0, 0, 0, 0, 0, 1)
+	return UserPresence(p.ID, p.DisplayName, uint8(p.Session.LoginData.UtcOffset+24), 0, 0, p.Session.Status.Mode, 0, 0, 1)
 }
 
 // Packet 86
