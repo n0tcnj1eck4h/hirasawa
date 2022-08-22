@@ -81,7 +81,7 @@ func init() {
 		ctx.Player.Session.Status.Mode = mode
 		ctx.Player.Session.Status.MapID = mapID
 
-		return nil	
+		return nil
 	}
 
 	MainHandler.Funcs[SEND_PUBLIC_MESSAGE] = unimplemented
@@ -169,7 +169,19 @@ func init() {
 	}
 
 	MainHandler.Funcs[USER_PRESENCE_REQUEST_ALL] = unimplemented
-	MainHandler.Funcs[TOGGLE_BLOCK_NON_FRIEND_DMS] = unimplemented
+	MainHandler.Funcs[TOGGLE_BLOCK_NON_FRIEND_DMS] = func(p *PacketHeader, ctx *common.Context, r io.Reader) error {
+		plr, err := readInt32List16(r)
+		if err != nil {
+			return err
+		}
+
+		// disaster
+		ctx.Player.Session.LoginData.PrivateMessages = plr == nil
+
+		doNothing(p, ctx, r)
+
+		return nil
+	}
 	MainHandler.Funcs[TOURNAMENT_JOIN_MATCH_CHANNEL] = unimplemented
 	MainHandler.Funcs[TOURNAMENT_LEAVE_MATCH_CHANNEL] = unimplemented
 }
