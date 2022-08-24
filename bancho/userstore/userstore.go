@@ -1,8 +1,8 @@
 package userstore
 
 import (
+	"github.com/google/uuid"
 	"errors"
-	"fmt"
 	"strings"
 )
 
@@ -67,14 +67,20 @@ func (store *PlayerStore) Login(login *LoginData) (*Player, error) {
 	}
 
 	player.Session = &Session{
-		OsuToken:  fmt.Sprintf("placeholdertoken%d", player.ID),
-		Status: &PlayerStatus{},
+		OsuToken: uuid.NewString(), 
 		LoginData: login,
 	}
 
+	player.Session.Status.PrivateMessages = player.Session.LoginData.PrivateMessages
 	store.idTokenMap[player.Session.OsuToken] = player.ID
 
 	return player, nil
+}
+
+func (store *PlayerStore) Logout(p *Player) error {
+	delete(store.idTokenMap, p.Session.OsuToken)
+	p.Session = nil
+	return nil
 }
 
 func (store *PlayerStore) Add(p *Player) error {

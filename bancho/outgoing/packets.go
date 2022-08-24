@@ -58,9 +58,8 @@ func GetAttention() []byte {
 }
 
 // Packet 24
-// GUGE: strings might be broken
-func Notification() []byte {
-	return write(NOTIFICATION)
+func Notification(msg string) []byte {
+	return write(NOTIFICATION, msg)
 }
 
 // Packet 28
@@ -228,6 +227,7 @@ func write(p OutgoingPacketID, args ...interface{}) []byte {
 	for _, v := range args {
 		switch t := v.(type) {
 		case string:
+			// TODO: strings are actually broken
 			payload.Write(writeString(t))
 		default:
 			err = binary.Write(payload, binary.LittleEndian, v)

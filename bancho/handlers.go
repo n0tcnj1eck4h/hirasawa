@@ -55,7 +55,8 @@ func HandleBanchoRequest(w http.ResponseWriter, r *http.Request) {
 
 	if !ok {
 		log.Println("Failed to get player from token", token)
-		w.WriteHeader(http.StatusTeapot)
+		w.Write(outgoing.Notification("Nice session token mate"))
+		w.Write(outgoing.RestartServer(10))
 		return
 	}
 

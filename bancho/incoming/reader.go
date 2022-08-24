@@ -41,7 +41,7 @@ func readString(r io.Reader) (string, error) {
 			return "", err
 		}
 
-		length |= b&0x7F << shift
+		length |= b & 0x7F << shift
 		if b&0x80 == 0 {
 			break
 		}

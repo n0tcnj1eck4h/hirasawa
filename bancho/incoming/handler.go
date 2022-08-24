@@ -27,6 +27,7 @@ func (h *HandlerSet) Handle(ctx *common.Context, r io.Reader) error {
 
 	handlerFunc, ok := h.Funcs[header.ReadType]
 	if !ok {
+		skip(header, nil, r)
 		return errors.New("Missing handler")
 	}
 
@@ -87,7 +88,7 @@ func init() {
 	MainHandler.Funcs[SEND_PUBLIC_MESSAGE] = unimplemented
 	MainHandler.Funcs[LOGOUT] = func(p *PacketHeader, ctx *common.Context, r io.Reader) error {
 		userstore.Store.Remove(ctx.Player)
-		doNothing(p, ctx, r)
+		skip(p, ctx, r)
 		return nil
 	}
 
@@ -97,7 +98,7 @@ func init() {
 		return nil
 	}
 
-	MainHandler.Funcs[PING] = doNothing
+	MainHandler.Funcs[PING] = skip
 	MainHandler.Funcs[START_SPECTATING] = unimplemented
 	MainHandler.Funcs[STOP_SPECTATING] = unimplemented
 	MainHandler.Funcs[SPECTATE_FRAMES] = unimplemented
@@ -126,7 +127,17 @@ func init() {
 	MainHandler.Funcs[CHANNEL_JOIN] = unimplemented
 	MainHandler.Funcs[BEATMAP_INFO_REQUEST] = unimplemented
 	MainHandler.Funcs[MATCH_TRANSFER_HOST] = unimplemented
-	MainHandler.Funcs[FRIEND_ADD] = unimplemented
+	MainHandler.Funcs[FRIEND_ADD] = func(p *PacketHeader, ctx *common.Context, r io.Reader) error {
+		var userId int32
+		err := binary.Read(r, binary.LittleEndian, &userId)
+		if err != nil {
+			return err
+		}
+		
+		// TODO: ADD FRIEND
+		return nil
+	}
+
 	MainHandler.Funcs[FRIEND_REMOVE] = unimplemented
 	MainHandler.Funcs[MATCH_CHANGE_TEAM] = unimplemented
 	MainHandler.Funcs[CHANNEL_PART] = unimplemented
@@ -170,28 +181,26 @@ func init() {
 
 	MainHandler.Funcs[USER_PRESENCE_REQUEST_ALL] = unimplemented
 	MainHandler.Funcs[TOGGLE_BLOCK_NON_FRIEND_DMS] = func(p *PacketHeader, ctx *common.Context, r io.Reader) error {
-		plr, err := readInt32List16(r)
+		var val int32
+		err := binary.Read(r, binary.LittleEndian, &val)
 		if err != nil {
 			return err
 		}
 
-		// disaster
-		ctx.Player.Session.LoginData.PrivateMessages = plr == nil
-
-		doNothing(p, ctx, r)
-
+		ctx.Player.Session.Status.PrivateMessages = val != 0
 		return nil
 	}
+
 	MainHandler.Funcs[TOURNAMENT_JOIN_MATCH_CHANNEL] = unimplemented
 	MainHandler.Funcs[TOURNAMENT_LEAVE_MATCH_CHANNEL] = unimplemented
 }
 
-func doNothing(p *PacketHeader, ctx *common.Context, r io.Reader) error {
+func skip(p *PacketHeader, ctx *common.Context, r io.Reader) error {
 	_, err := io.CopyN(ioutil.Discard, r, int64(p.Length))
 	return err
 }
 
 func unimplemented(p *PacketHeader, ctx *common.Context, r io.Reader) error {
 	log.Println("Packet handling for", p.ReadType, "is not yet implemented")
-	return doNothing(p, ctx, r)
+	return skip(p, ctx, r)
 }
