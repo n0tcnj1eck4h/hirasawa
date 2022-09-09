@@ -1,4 +1,4 @@
-package incoming
+package server
 
 import (
 	"fmt"

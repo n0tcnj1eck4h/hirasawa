@@ -34,14 +34,14 @@ type PlayerStats struct {
 }
 
 type PlayerStatus struct {
-	Action   uint8
-	InfoText string
-	MapHash  string
-	Mods     uint32
-	Mode     uint8
-	MapID    int32
-	PrivateMessages   bool
-	SilenceEnd	int32
+	Action          uint8
+	InfoText        string
+	MapHash         string
+	Mods            uint32
+	Mode            uint8
+	MapID           int32
+	PrivateMessages bool
+	SilenceEnd      int32
 }
 
 type Player struct {

@@ -1,8 +1,8 @@
 package userstore
 
 import (
-	"github.com/google/uuid"
 	"errors"
+	"github.com/google/uuid"
 	"strings"
 )
 
@@ -13,16 +13,16 @@ type PlayerStore struct {
 }
 
 var idPlaceholder int32 = 10
-var Store PlayerStore
 
 var WrongPassword = errors.New("Wrong password")
 var NoSuchUser = errors.New("User doesn't exist")
 
-func init() {
-	Store = PlayerStore{}
-	Store.playerMap = map[int32]*Player{}
-	Store.idTokenMap = map[string]int32{}
-	Store.idNameMap = map[string]int32{}
+func New() (s *PlayerStore) {
+	s = &PlayerStore{}
+	s.playerMap = map[int32]*Player{}
+	s.idTokenMap = map[string]int32{}
+	s.idNameMap = map[string]int32{}
+	return s
 }
 
 func getSafeName(name string) string {
@@ -67,7 +67,7 @@ func (store *PlayerStore) Login(login *LoginData) (*Player, error) {
 	}
 
 	player.Session = &Session{
-		OsuToken: uuid.NewString(), 
+		OsuToken:  uuid.NewString(),
 		LoginData: login,
 	}
 
