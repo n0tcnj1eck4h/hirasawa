@@ -1,7 +1,4 @@
-# project HIRASAWA
+# Hirasawa
+A disaster of an attempt to create a bancho server in Go.
 
-The backend for susumu.
-
-### Usage
-
-Start the project.
+Might pick it up again in some distant future...
